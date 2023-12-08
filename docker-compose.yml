@@ -1,0 +1,61 @@
+version: '3.7'
+
+services:
+  currency-exchange:
+    image: canngos/uce-currency-exchange-service:latest
+    mem_limit: 700m
+    ports:
+      - "8000:8000"
+    networks:
+      - currency-network
+    depends_on:
+      - naming-server
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://naming-server:8761/eureka # In order to register this server to naming server.
+      management.zipkin.tracing.endpoint: http://zipkin-server:9411/api/v2/spans
+  
+  currency-conversion:
+    image: canngos/uce-currency-conversion-service:latest
+    mem_limit: 700m
+    ports:
+      - "8100:8100"
+    networks:
+      - currency-network
+    depends_on:
+      - naming-server
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://naming-server:8761/eureka # In order to register this server to naming server.
+      management.zipkin.tracing.endpoint: http://zipkin-server:9411/api/v2/spans
+  
+  api-gateway:
+    image: canngos/uce-api-gateway:latest
+    mem_limit: 700m
+    ports:
+      - "8765:8765"
+    networks:
+      - currency-network
+    depends_on:
+      - naming-server
+    environment:
+      eureka.client.serviceUrl.defaultZone: http://naming-server:8761/eureka # In order to register this server to naming server.
+      management.zipkin.tracing.endpoint: http://zipkin-server:9411/api/v2/spans
+
+  naming-server:
+    image: canngos/uce-naming-server:latest
+    mem_limit: 700m
+    ports:
+      - "8761:8761"
+    networks:
+      - currency-network
+      
+  zipkin-server:
+    image: openzipkin/zipkin:2.23
+    mem_limit: 300m
+    ports:
+      - "9411:9411"
+    networks:
+      - currency-network
+    restart: always #Restart if there is a problem starting up
+  
+networks:
+  currency-network:
